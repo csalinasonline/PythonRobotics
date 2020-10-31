@@ -6,12 +6,19 @@ author: Atsushi Sakai (@Atsushi_twi)
 
 """
 
+#===== Imports
+
+
 import math
 
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
 import scipy.linalg
+
+
+#===== Constants
+
 
 # Covariance for UKF simulation
 Q = np.diag([
@@ -35,6 +42,9 @@ BETA = 2
 KAPPA = 0
 
 show_animation = True
+
+
+#===== Common Implementation Methods
 
 
 def calc_input():
@@ -83,6 +93,33 @@ def observation_model(x):
     z = H @ x
 
     return z
+
+
+def plot_covariance_ellipse(xEst, PEst):  # pragma: no cover
+    Pxy = PEst[0:2, 0:2]
+    eigval, eigvec = np.linalg.eig(Pxy)
+
+    if eigval[0] >= eigval[1]:
+        bigind = 0
+        smallind = 1
+    else:
+        bigind = 1
+        smallind = 0
+
+    t = np.arange(0, 2 * math.pi + 0.1, 0.1)
+    a = math.sqrt(eigval[bigind])
+    b = math.sqrt(eigval[smallind])
+    x = [a * math.cos(it) for it in t]
+    y = [b * math.sin(it) for it in t]
+    angle = math.atan2(eigvec[1, bigind], eigvec[0, bigind])
+    rot = Rot.from_euler('z', angle).as_matrix()[0:2, 0:2]
+    fx = rot @ np.array([x, y])
+    px = np.array(fx[0, :] + xEst[0, 0]).flatten()
+    py = np.array(fx[1, :] + xEst[1, 0]).flatten()
+    plt.plot(px, py, "--r")
+
+
+#===== Specific Algo Implementation Methods
 
 
 def generate_sigma_points(xEst, PEst, gamma):
@@ -165,30 +202,6 @@ def ukf_estimation(xEst, PEst, z, u, wm, wc, gamma):
     return xEst, PEst
 
 
-def plot_covariance_ellipse(xEst, PEst):  # pragma: no cover
-    Pxy = PEst[0:2, 0:2]
-    eigval, eigvec = np.linalg.eig(Pxy)
-
-    if eigval[0] >= eigval[1]:
-        bigind = 0
-        smallind = 1
-    else:
-        bigind = 1
-        smallind = 0
-
-    t = np.arange(0, 2 * math.pi + 0.1, 0.1)
-    a = math.sqrt(eigval[bigind])
-    b = math.sqrt(eigval[smallind])
-    x = [a * math.cos(it) for it in t]
-    y = [b * math.sin(it) for it in t]
-    angle = math.atan2(eigvec[1, bigind], eigvec[0, bigind])
-    rot = Rot.from_euler('z', angle).as_matrix()[0:2, 0:2]
-    fx = rot @ np.array([x, y])
-    px = np.array(fx[0, :] + xEst[0, 0]).flatten()
-    py = np.array(fx[1, :] + xEst[1, 0]).flatten()
-    plt.plot(px, py, "--r")
-
-
 def setup_ukf(nx):
     lamb = ALPHA ** 2 * (nx + KAPPA) - nx
     # calculate weights
@@ -203,6 +216,9 @@ def setup_ukf(nx):
     wc = np.array([wc])
 
     return wm, wc, gamma
+
+
+#===== Main Method
 
 
 def main():
@@ -254,6 +270,9 @@ def main():
             plt.axis("equal")
             plt.grid(True)
             plt.pause(0.001)
+
+
+#===== Script Start
 
 
 if __name__ == '__main__':
