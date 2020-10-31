@@ -3,6 +3,7 @@
 Ensemble Kalman Filter(EnKF) localization sample
 
 author: Ryohei Sasaki(rsasaki0109)
+modified: Conrad Salinas
 
 Ref:
 Ensemble Kalman filtering
@@ -10,11 +11,19 @@ Ensemble Kalman filtering
 
 """
 
+
+#===== Imports
+
+
 import math
 
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
+
+
+#===== Constants
+
 
 #  Simulation parameter
 Q_sim = np.diag([0.2, np.deg2rad(1.0)]) ** 2
@@ -30,11 +39,72 @@ NP = 20  # Number of Particle
 show_animation = True
 
 
+#===== Common Implementation Methods
+
+
 def calc_input():
     v = 1.0  # [m/s]
     yaw_rate = 0.1  # [rad/s]
     u = np.array([[v, yaw_rate]]).T
     return u
+
+def plot_covariance_ellipse(xEst, PEst):  # pragma: no cover
+    Pxy = PEst[0:2, 0:2]
+    eig_val, eig_vec = np.linalg.eig(Pxy)
+
+    if eig_val[0] >= eig_val[1]:
+        big_ind = 0
+        small_ind = 1
+    else:
+        big_ind = 1
+        small_ind = 0
+
+    t = np.arange(0, 2 * math.pi + 0.1, 0.1)
+
+    # eig_val[big_ind] or eiq_val[small_ind] were occasionally negative
+    # numbers extremely close to 0 (~10^-20), catch these cases and set
+    # the respective variable to 0
+    try:
+        a = math.sqrt(eig_val[big_ind])
+    except ValueError:
+        a = 0
+
+    try:
+        b = math.sqrt(eig_val[small_ind])
+    except ValueError:
+        b = 0
+
+    x = [a * math.cos(it) for it in t]
+    y = [b * math.sin(it) for it in t]
+    angle = math.atan2(eig_vec[1, big_ind], eig_vec[0, big_ind])
+    rot = Rot.from_euler('z', angle).as_matrix()[0:2, 0:2]
+    fx = np.stack([x, y]).T @ rot
+
+    px = np.array(fx[:, 0] + xEst[0, 0]).flatten()
+    py = np.array(fx[:, 1] + xEst[1, 0]).flatten()
+    plt.plot(px, py, "--r")
+    
+    
+def motion_model(x, u):
+    F = np.array([[1.0, 0, 0, 0],
+                  [0, 1.0, 0, 0],
+                  [0, 0, 1.0, 0],
+                  [0, 0, 0, 0]])
+
+    B = np.array([[DT * math.cos(x[2, 0]), 0],
+                  [DT * math.sin(x[2, 0]), 0],
+                  [0.0, DT],
+                  [1.0, 0.0]])
+    x = F.dot(x) + B.dot(u)
+
+    return x
+
+
+def pi_2_pi(angle):
+    return (angle + math.pi) % (2 * math.pi) - math.pi
+
+
+#===== Specific Algo Implementation Methods
 
 
 def observation(xTrue, xd, u, RFID):
@@ -61,21 +131,6 @@ def observation(xTrue, xd, u, RFID):
 
     xd = motion_model(xd, ud)
     return xTrue, z, xd, ud
-
-
-def motion_model(x, u):
-    F = np.array([[1.0, 0, 0, 0],
-                  [0, 1.0, 0, 0],
-                  [0, 0, 1.0, 0],
-                  [0, 0, 0, 0]])
-
-    B = np.array([[DT * math.cos(x[2, 0]), 0],
-                  [DT * math.sin(x[2, 0]), 0],
-                  [0.0, DT],
-                  [1.0, 0.0]])
-    x = F.dot(x) + B.dot(u)
-
-    return x
 
 
 def observe_landmark_position(x, landmarks):
@@ -139,45 +194,7 @@ def enkf_localization(px, z, u):
     return xEst, PEst, px_hat
 
 
-def plot_covariance_ellipse(xEst, PEst):  # pragma: no cover
-    Pxy = PEst[0:2, 0:2]
-    eig_val, eig_vec = np.linalg.eig(Pxy)
-
-    if eig_val[0] >= eig_val[1]:
-        big_ind = 0
-        small_ind = 1
-    else:
-        big_ind = 1
-        small_ind = 0
-
-    t = np.arange(0, 2 * math.pi + 0.1, 0.1)
-
-    # eig_val[big_ind] or eiq_val[small_ind] were occasionally negative
-    # numbers extremely close to 0 (~10^-20), catch these cases and set
-    # the respective variable to 0
-    try:
-        a = math.sqrt(eig_val[big_ind])
-    except ValueError:
-        a = 0
-
-    try:
-        b = math.sqrt(eig_val[small_ind])
-    except ValueError:
-        b = 0
-
-    x = [a * math.cos(it) for it in t]
-    y = [b * math.sin(it) for it in t]
-    angle = math.atan2(eig_vec[1, big_ind], eig_vec[0, big_ind])
-    rot = Rot.from_euler('z', angle).as_matrix()[0:2, 0:2]
-    fx = np.stack([x, y]).T @ rot
-
-    px = np.array(fx[:, 0] + xEst[0, 0]).flatten()
-    py = np.array(fx[:, 1] + xEst[1, 0]).flatten()
-    plt.plot(px, py, "--r")
-
-
-def pi_2_pi(angle):
-    return (angle + math.pi) % (2 * math.pi) - math.pi
+#===== Main Method
 
 
 def main():
@@ -237,6 +254,9 @@ def main():
             plt.axis("equal")
             plt.grid(True)
             plt.pause(0.001)
+
+
+#===== Script Start
 
 
 if __name__ == '__main__':
