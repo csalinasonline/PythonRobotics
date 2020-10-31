@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
 
+
 # Covariance for EKF simulation
 Q = np.diag([
     0.1,  # variance of location on x-axis
@@ -58,8 +59,8 @@ def motion_model(x, u):
                   [0, 0, 1.0, 0],
                   [0, 0, 0, 0]])
 
-    B = np.array([[DT * math.cos(x[2, 0]), 0],
-                  [DT * math.sin(x[2, 0]), 0],
+    B = np.array([[DT * math.cos(x[2]), 0],
+                  [DT * math.sin(x[2]), 0],
                   [0.0, DT],
                   [1.0, 0.0]])
 
@@ -150,7 +151,7 @@ def plot_covariance_ellipse(xEst, PEst):  # pragma: no cover
     y = [b * math.sin(it) for it in t]
     angle = math.atan2(eigvec[1, bigind], eigvec[0, bigind])
     rot = Rot.from_euler('z', angle).as_matrix()[0:2, 0:2]
-    fx = rot @ (np.array([x, y]))
+    fx = rot @ np.array([x, y])
     px = np.array(fx[0, :] + xEst[0, 0]).flatten()
     py = np.array(fx[1, :] + xEst[1, 0]).flatten()
     plt.plot(px, py, "--r")
@@ -159,20 +160,19 @@ def plot_covariance_ellipse(xEst, PEst):  # pragma: no cover
 def main():
     print(__file__ + " start!!")
 
-    time = 0.0
-
-    # State Vector [x y yaw v]'
-    xEst = np.zeros((4, 1))
-    xTrue = np.zeros((4, 1))
-    PEst = np.eye(4)
-
-    xDR = np.zeros((4, 1))  # Dead reckoning
+    nx = 4  # State Vector [x y yaw v]'
+    xEst = np.zeros((nx, 1))
+    xTrue = np.zeros((nx, 1))
+    PEst = np.eye(nx)
+    xDR = np.zeros((nx, 1))  # Dead reckoning
 
     # history
     hxEst = xEst
     hxTrue = xTrue
     hxDR = xTrue
     hz = np.zeros((2, 1))
+
+    time = 0.0
 
     while SIM_TIME >= time:
         time += DT

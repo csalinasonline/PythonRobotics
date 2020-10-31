@@ -39,8 +39,8 @@ show_animation = True
 
 def calc_input():
     v = 1.0  # [m/s]
-    yawRate = 0.1  # [rad/s]
-    u = np.array([[v, yawRate]]).T
+    yawrate = 0.1  # [rad/s]
+    u = np.array([[v], [yawrate]])
     return u
 
 
@@ -244,12 +244,12 @@ def main():
             plt.gcf().canvas.mpl_connect('key_release_event',
                     lambda event: [exit(0) if event.key == 'escape' else None])
             plt.plot(hz[0, :], hz[1, :], ".g")
-            plt.plot(np.array(hxTrue[0, :]).flatten(),
-                     np.array(hxTrue[1, :]).flatten(), "-b")
-            plt.plot(np.array(hxDR[0, :]).flatten(),
-                     np.array(hxDR[1, :]).flatten(), "-k")
-            plt.plot(np.array(hxEst[0, :]).flatten(),
-                     np.array(hxEst[1, :]).flatten(), "-r")
+            plt.plot(hxTrue[0, :].flatten(),
+                     hxTrue[1, :].flatten(), "-b")
+            plt.plot(hxDR[0, :].flatten(),
+                     hxDR[1, :].flatten(), "-k")
+            plt.plot(hxEst[0, :].flatten(),
+                     hxEst[1, :].flatten(), "-r")
             plot_covariance_ellipse(xEst, PEst)
             plt.axis("equal")
             plt.grid(True)
