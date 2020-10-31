@@ -5,6 +5,7 @@ Fuse sensor data from IMU and GPS to obtain accurate position
 https://ieeexplore.ieee.org/document/4982682
 
 Author: Raghuram Shankar
+modified: Conrad Salinas
 
 state matrix:                       2D x-y position, yaw, velocity and yaw rate
 measurement matrix:                 2D x-y position, velocity and yaw rate
@@ -32,10 +33,17 @@ z_cat:                              Concatenate all measurements
 
 """
 
+
+#===== Imports
+
+
 import math
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.linalg import sqrtm
+
+
+#===== Constants
 
 
 dt = 0.1
@@ -83,6 +91,9 @@ r = np.array([[0.015, 0.0, 0.0, 0.0],
               [0.0, 0.010, 0.0, 0.0],
               [0.0, 0.0, 0.1, 0.0],
               [0.0, 0.0, 0.0, 0.01]])**2
+
+
+#===== Specific Algo Implementation Methods
 
 
 def cubature_kalman_filter(x_est, p_est, z):
@@ -214,6 +225,9 @@ def plot_final(x_true_cat, x_est_cat, z_cat):
     plt.show()
 
 
+#===== Main Method
+
+
 def main():
     print(__file__ + " start!!")
     x_est = x_0
@@ -240,6 +254,9 @@ def main():
         x_est_cat = np.vstack((x_est_cat, x_est[0:2].T))
         z_cat = np.vstack((z_cat, z[0:2].T))
     print('CKF Over')
+
+
+#===== Script Start
 
 
 if __name__ == '__main__':
