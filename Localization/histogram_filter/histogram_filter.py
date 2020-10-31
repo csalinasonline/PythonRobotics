@@ -8,8 +8,12 @@ In this simulation, x,y are unknown, yaw is known.
 Initial position is not needed.
 
 author: Atsushi Sakai (@Atsushi_twi)
+modified: Conrad Salinas
 
 """
+
+#===== Imports
+
 
 import copy
 import math
@@ -18,6 +22,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.ndimage import gaussian_filter
 from scipy.stats import norm
+
+
+#===== Constants
+
 
 # Parameters
 EXTEND_AREA = 10.0  # [m] grid map extended length
@@ -54,6 +62,35 @@ class GridMap:
         self.y_w = None
         self.dx = 0.0  # movement distance
         self.dy = 0.0  # movement distance
+        
+
+#===== Common Implementation Methods
+
+
+def calc_input():
+    v = 1.0  # [m/s]
+    yaw_rate = 0.1  # [rad/s]
+    u = np.array([v, yaw_rate]).reshape(2, 1)
+    return u
+
+
+def motion_model(x, u):
+    F = np.array([[1.0, 0, 0, 0],
+                  [0, 1.0, 0, 0],
+                  [0, 0, 1.0, 0],
+                  [0, 0, 0, 0]])
+
+    B = np.array([[DT * math.cos(x[2, 0]), 0],
+                  [DT * math.sin(x[2, 0]), 0],
+                  [0.0, DT],
+                  [1.0, 0.0]])
+
+    x = F @ x + B @ u
+
+    return x
+
+
+#===== Specific Algo Implementation Methods
 
 
 def histogram_filter_localization(grid_map, u, z, yaw):
@@ -86,29 +123,6 @@ def observation_update(grid_map, z, std):
     grid_map = normalize_probability(grid_map)
 
     return grid_map
-
-
-def calc_input():
-    v = 1.0  # [m/s]
-    yaw_rate = 0.1  # [rad/s]
-    u = np.array([v, yaw_rate]).reshape(2, 1)
-    return u
-
-
-def motion_model(x, u):
-    F = np.array([[1.0, 0, 0, 0],
-                  [0, 1.0, 0, 0],
-                  [0, 0, 1.0, 0],
-                  [0, 0, 0, 0]])
-
-    B = np.array([[DT * math.cos(x[2, 0]), 0],
-                  [DT * math.sin(x[2, 0]), 0],
-                  [0.0, DT],
-                  [1.0, 0.0]])
-
-    x = F @ x + B @ u
-
-    return x
 
 
 def draw_heat_map(data, mx, my):
@@ -213,6 +227,9 @@ def calc_grid_index(grid_map):
     return mx, my
 
 
+#===== Main Method
+
+
 def main():
     print(__file__ + " start!!")
 
@@ -255,6 +272,9 @@ def main():
             plt.pause(0.1)
 
     print("Done")
+
+
+#===== Script Start
 
 
 if __name__ == '__main__':
