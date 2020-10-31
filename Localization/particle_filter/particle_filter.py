@@ -3,14 +3,23 @@
 Particle Filter localization sample
 
 author: Atsushi Sakai (@Atsushi_twi)
+modified: Conrad Salinas
 
 """
+
+
+#===== Imports
+
 
 import math
 
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
+
+
+#===== Constants
+
 
 # Estimation parameter of PF
 Q = np.diag([0.2]) ** 2  # range error
@@ -31,11 +40,69 @@ NTh = NP / 2.0  # Number of particle for re-sampling
 show_animation = True
 
 
+#===== Common Implementation Methods
+
+
 def calc_input():
     v = 1.0  # [m/s]
     yaw_rate = 0.1  # [rad/s]
     u = np.array([[v, yaw_rate]]).T
     return u
+
+
+def motion_model(x, u):
+    F = np.array([[1.0, 0, 0, 0],
+                  [0, 1.0, 0, 0],
+                  [0, 0, 1.0, 0],
+                  [0, 0, 0, 0]])
+
+    B = np.array([[DT * math.cos(x[2, 0]), 0],
+                  [DT * math.sin(x[2, 0]), 0],
+                  [0.0, DT],
+                  [1.0, 0.0]])
+
+    x = F.dot(x) + B.dot(u)
+
+    return x
+
+
+def plot_covariance_ellipse(x_est, p_est):  # pragma: no cover
+    p_xy = p_est[0:2, 0:2]
+    eig_val, eig_vec = np.linalg.eig(p_xy)
+
+    if eig_val[0] >= eig_val[1]:
+        big_ind = 0
+        small_ind = 1
+    else:
+        big_ind = 1
+        small_ind = 0
+
+    t = np.arange(0, 2 * math.pi + 0.1, 0.1)
+
+    # eig_val[big_ind] or eiq_val[small_ind] were occasionally negative
+    # numbers extremely close to 0 (~10^-20), catch these cases and set the
+    # respective variable to 0
+    try:
+        a = math.sqrt(eig_val[big_ind])
+    except ValueError:
+        a = 0
+
+    try:
+        b = math.sqrt(eig_val[small_ind])
+    except ValueError:
+        b = 0
+
+    x = [a * math.cos(it) for it in t]
+    y = [b * math.sin(it) for it in t]
+    angle = math.atan2(eig_vec[1, big_ind], eig_vec[0, big_ind])
+    rot = Rot.from_euler('z', angle).as_matrix()[0:2, 0:2]
+    fx = rot.dot(np.array([[x, y]]))
+    px = np.array(fx[0, :] + x_est[0, 0]).flatten()
+    py = np.array(fx[1, :] + x_est[1, 0]).flatten()
+    plt.plot(px, py, "--r")
+
+
+#===== Specific Algo Implementation Methods
 
 
 def observation(x_true, xd, u, rf_id):
@@ -62,22 +129,6 @@ def observation(x_true, xd, u, rf_id):
     xd = motion_model(xd, ud)
 
     return x_true, z, xd, ud
-
-
-def motion_model(x, u):
-    F = np.array([[1.0, 0, 0, 0],
-                  [0, 1.0, 0, 0],
-                  [0, 0, 1.0, 0],
-                  [0, 0, 0, 0]])
-
-    B = np.array([[DT * math.cos(x[2, 0]), 0],
-                  [DT * math.sin(x[2, 0]), 0],
-                  [0.0, DT],
-                  [1.0, 0.0]])
-
-    x = F.dot(x) + B.dot(u)
-
-    return x
 
 
 def gauss_likelihood(x, sigma):
@@ -160,40 +211,7 @@ def re_sampling(px, pw):
     return px, pw
 
 
-def plot_covariance_ellipse(x_est, p_est):  # pragma: no cover
-    p_xy = p_est[0:2, 0:2]
-    eig_val, eig_vec = np.linalg.eig(p_xy)
-
-    if eig_val[0] >= eig_val[1]:
-        big_ind = 0
-        small_ind = 1
-    else:
-        big_ind = 1
-        small_ind = 0
-
-    t = np.arange(0, 2 * math.pi + 0.1, 0.1)
-
-    # eig_val[big_ind] or eiq_val[small_ind] were occasionally negative
-    # numbers extremely close to 0 (~10^-20), catch these cases and set the
-    # respective variable to 0
-    try:
-        a = math.sqrt(eig_val[big_ind])
-    except ValueError:
-        a = 0
-
-    try:
-        b = math.sqrt(eig_val[small_ind])
-    except ValueError:
-        b = 0
-
-    x = [a * math.cos(it) for it in t]
-    y = [b * math.sin(it) for it in t]
-    angle = math.atan2(eig_vec[1, big_ind], eig_vec[0, big_ind])
-    rot = Rot.from_euler('z', angle).as_matrix()[0:2, 0:2]
-    fx = rot.dot(np.array([[x, y]]))
-    px = np.array(fx[0, :] + x_est[0, 0]).flatten()
-    py = np.array(fx[1, :] + x_est[1, 0]).flatten()
-    plt.plot(px, py, "--r")
+#===== Main Method
 
 
 def main():
@@ -254,6 +272,9 @@ def main():
             plt.axis("equal")
             plt.grid(True)
             plt.pause(0.001)
+
+
+#===== Script Start
 
 
 if __name__ == '__main__':
