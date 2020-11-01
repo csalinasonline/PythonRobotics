@@ -93,31 +93,28 @@ def calc_input():
 def linear_kalman(z, x1, P1, first_run):
     if first_run:
         # 1. Prediction of estimate
-        # [1x1] = [1x1] * [1x1]
-        xp = A * x_init             
-        # [1x1] = [1x1] * [1x1] * [1x1]
+        # [1x1] = [1x1]
+        xp = x_init             
+        # [1x1] = [1x1]
         # Prediction of the error covariance
-        Pp = A * P_init * (A).T     
+        Pp = P_init    
     else: 
-        # [1x1] = [1x1] * [1x1]
-        xp = A * x1 
-        # [1x1] = [1x1] * [1x1] * [1x1]
-        Pp = A * P1 * (A).T 
+        # [1x1] = [1x1]
+        xp = x1 
+        # [1x1] = [1x1]
+        Pp = P1
     
     # 2. Compution of Kalman gain
-    # [1x1] = [1x1] *  [1x1] * (1 / ([1x1] * [1x1] * [1x1] + [1x1])) 
-    K = Pp * (H).T * (1 / (H * Pp * (H).T + R)) 
-    
-    
+    # [1x1] = [1x1] * (1 / ([[1x1] + [1x1]))                            
+    K = Pp * (1 / (Pp + R)) 
+   
     # 3. Computaion of the estimate
-    # [1x1] = [1x1] + [1x1] * ([1x1] - [1x1] * [1x1])
-    x_est = xp + K * (z - H * xp)   
-    
-    
+    # [1x1] = [1x1] + [1x1] * ([1x1] - [1x1])
+    x_est = xp + K * (z - xp)   
     
     # 4. Computaion of the error covariance
-    # [1x1] = [1x1] - [1x1] * [1x1] * [1x1]
-    Pe = Pp - K * H * Pp            
+    # [1x1] = [1x1] - [1x1] * [1x1]
+    Pe = Pp - K * Pp            
     
     return x_est, K, Pe
 
