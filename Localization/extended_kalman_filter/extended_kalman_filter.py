@@ -8,7 +8,7 @@ modified: Conrad Salinas
 motion_model (state matrix) [4X1]:              2D x-y position, yaw, velocity 
                                                 and yaw rate
                                             
-observation_model (measurement matrix) [4X1]:   2D x-y position, 
+observation_model (measurement matrix) [2X1]:   2D x-y position, 
                                                 velocity and yaw rate
 
 
@@ -318,7 +318,7 @@ def main():
         if show_animation:
             plt.cla()
             
-            # for stopping simulation with the esc key.
+            # for stopping simulation with the e sc key.
             plt.gcf().canvas.mpl_connect('key_release_event',
                     lambda event: [exit(0) if event.key == 'escape' else None])
             plt.plot(hz[0, :], hz[1, :], ".g")
