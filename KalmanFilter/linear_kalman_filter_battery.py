@@ -106,15 +106,17 @@ def linear_kalman(z, x1, P1, first_run):
     
     # 2. Compution of Kalman gain
     # [1x1] = [1x1] *  [1x1] * (1 / ([1x1] * [1x1] * [1x1] + [1x1])) 
-                             
     K = Pp * (H).T * (1 / (H * Pp * (H).T + R)) 
-    # [1x1] = [1x1] + [1x1] * ([1x1] - [1x1] * [1x1])
+    
     
     # 3. Computaion of the estimate
+    # [1x1] = [1x1] + [1x1] * ([1x1] - [1x1] * [1x1])
     x_est = xp + K * (z - H * xp)   
-    # [1x1] = [1x1] - [1x1] * [1x1] * [1x1]
+    
+    
     
     # 4. Computaion of the error covariance
+    # [1x1] = [1x1] - [1x1] * [1x1] * [1x1]
     Pe = Pp - K * H * Pp            
     
     return x_est, K, Pe
