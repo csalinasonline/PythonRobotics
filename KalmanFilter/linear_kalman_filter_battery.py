@@ -40,6 +40,8 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
+from scipy import stats
+
 
 #===== Constants
 
@@ -190,6 +192,7 @@ def main():
         idx = idx + 1
         
         if show_animation:
+            plt.figure(1)
             plt.cla()
             # for stopping simulation with the esc key.
             plt.gcf().canvas.mpl_connect('key_release_event',
@@ -214,8 +217,21 @@ def main():
             plt.grid(True)
             plt.tight_layout()
             plt.pause(0.001)
-
-
+            
+            
+    # 
+    plt.figure(2)
+    plt.cla()
+    stats_info = stats.describe(hxDR[:].flatten())
+    print(stats_info)
+    plt.title('Measurements Distribution')
+    plt.text(25, 5, 'mean = ' +  str(stats_info.mean) + 
+             '\nvariance = ' + str(stats_info.variance) + 
+             '\nobservations = ' + str(stats_info.nobs))
+    n, bins, patches = plt.hist(x=hxDR[:].flatten(), bins='auto', color='#0504aa',
+                            alpha=0.7, rwidth=0.85)
+    plt.show()
+    
 #===== Script Start
 
 
